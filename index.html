@@ -72,7 +72,7 @@
                 <!-- Input Token -->
                 <div>
                     <label class="block text-xs font-semibold text-blue-800 uppercase tracking-wider mb-1.5">Token Kehadiran</label>
-                    <input type="text" id="token" placeholder="Masukkan token sesi ini..." class="w-full px-4 py-3 bg-white border border-blue-200 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 outline-none text-blue-900 font-bold uppercase tracking-widest text-center text-sm shadow-inner">
+                    <input type="text" id="token" placeholder="Masukkan token sesi ini..." class="w-full px-4 py-3 bg-white border border-blue-200 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-blue-900 font-bold uppercase tracking-widest text-center text-sm shadow-inner transition-colors">
                 </div>
                 
                 <!-- Input File Screenshot -->
@@ -88,7 +88,7 @@
             </button>
         </form>
 
-        <div id="notif" class="mt-5 hidden text-center text-sm font-medium p-4 rounded-xl border"></div>
+        <div id="notif" class="mt-5 hidden text-center text-sm font-medium p-4 rounded-xl border transition-all"></div>
         
         <div class="mt-8 pt-6 border-t border-slate-100 text-center">
             <p class="text-[10px] text-slate-400 font-medium uppercase tracking-widest">Sistem berinovasi hak cipta</p>
@@ -123,7 +123,7 @@
         });
 
         form.addEventListener('submit', e => {
-            e.preventDefault();
+            e.preventDefault(); // Wajib agar halaman tidak reload
             
             const sesiDipilih = sesiSelect.value;
             const tokenDimasukkan = tokenInput.value.trim().toUpperCase();
@@ -137,29 +137,41 @@
                 else if (sesiDipilih === "Sesi 3" && tokenDimasukkan === "PERJANJIAN3") tokenValid = true;
 
                 if (!tokenValid) {
-                    notif.textContent = 'Peringatan: Token Salah! Pastikan token sesuai dengan Sesi yang dipilih.';
-                    notif.className = 'mt-5 block text-center text-sm font-bold p-4 rounded-xl bg-red-100 text-red-700 border border-red-300';
-                    setTimeout(() => { notif.className = 'hidden'; }, 5000);
-                    return; // Menghentikan proses submit
+                    // MUNCULKAN POP-UP ALERT BROWSER (Pasti muncul)
+                    alert("❌ AKSES DITOLAK! Token yang Anda masukkan SALAH atau TIDAK SESUAI dengan Sesi yang dipilih.");
+                    
+                    // Kosongkan token agar diisi ulang dan ubah warna border jadi merah
+                    tokenInput.value = '';
+                    tokenInput.focus();
+                    tokenInput.classList.add('border-red-500', 'bg-red-50');
+                    
+                    // Tampilkan notifikasi teks di bawah tombol
+                    notif.textContent = 'Peringatan: Token Salah! Silakan coba lagi.';
+                    notif.className = 'mt-5 block text-center text-sm font-bold p-4 rounded-xl bg-red-100 text-red-700 border border-red-400 shadow-sm';
+                    
+                    setTimeout(() => { 
+                        notif.className = 'hidden'; 
+                        tokenInput.classList.remove('border-red-500', 'bg-red-50');
+                    }, 5000);
+                    
+                    return; // MENGHENTIKAN PROSES! Data tidak akan terkirim
                 }
 
                 // 2. Validasi File Gambar khusus untuk yang Hadir
                 if (buktiInput.files.length === 0) {
-                     notif.textContent = 'Peringatan: Mohon lampirkan Bukti Screenshot Meeting!';
-                     notif.className = 'mt-5 block text-center text-sm font-bold p-4 rounded-xl bg-red-100 text-red-700 border border-red-300';
-                     setTimeout(() => { notif.className = 'hidden'; }, 5000);
-                     return;
+                     alert("⚠️ GAGAL! Anda wajib melampirkan Bukti Screenshot Meeting.");
+                     return; // Menghentikan proses
                 }
             }
 
+            // Jika semua benar, jalankan proses loading
             btnSubmit.disabled = true;
             btnSubmit.textContent = 'Memproses Upload... (Mohon tunggu)';
             
-            // Menampilkan notif loading
             notif.textContent = 'Sedang mengirim data dan mengunggah gambar...';
             notif.className = 'mt-5 block text-center text-sm font-semibold p-4 rounded-xl bg-blue-50 text-blue-600 border border-blue-200';
 
-            // Fungsi utama mengirim ke Google Apps Script
+            // Fungsi mengirim ke Google Apps Script
             const kirimData = (base64String, fileName, mimeType) => {
                 const data = {
                     nim: document.getElementById('nim').value,
@@ -180,12 +192,13 @@
                     body: JSON.stringify(data)
                 })
                 .then(() => {
-                    notif.textContent = 'Data & Foto Berhasil Terkirim!';
-                    notif.className = 'mt-5 block text-center text-sm font-bold p-4 rounded-xl bg-emerald-100 text-emerald-700 border border-emerald-300';
+                    notif.textContent = '✅ Data & Foto Berhasil Terkirim!';
+                    notif.className = 'mt-5 block text-center text-sm font-bold p-4 rounded-xl bg-emerald-100 text-emerald-700 border border-emerald-400 shadow-sm';
                     form.reset();
                     wajibHadirContainer.style.display = 'block';
                 })
                 .catch(error => {
+                    alert("Terjadi kesalahan jaringan, silakan coba lagi.");
                     notif.textContent = 'Terjadi kesalahan jaringan.';
                     notif.className = 'mt-5 block text-center text-sm font-bold p-4 rounded-xl bg-rose-100 text-rose-700 border border-rose-300';
                 })
@@ -196,7 +209,7 @@
                 });
             };
 
-            // Membaca file gambar sebagai Base64
+            // Proses upload gambar
             if (keteranganDipilih === 'Hadir' && buktiInput.files.length > 0) {
                 const file = buktiInput.files[0];
                 const reader = new FileReader();
@@ -205,7 +218,6 @@
                 };
                 reader.readAsDataURL(file);
             } else {
-                // Mengirim tanpa foto (untuk Izin/Sakit)
                 kirimData("", "", "");
             }
         });
