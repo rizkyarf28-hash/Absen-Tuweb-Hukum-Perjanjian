@@ -108,6 +108,7 @@
         const wajibHadirContainer = document.getElementById('wajibHadirContainer');
         const tokenInput = document.getElementById('token');
         const buktiInput = document.getElementById('bukti');
+        const sesiSelect = document.getElementById('sesi');
 
         // Logic menyembunyikan Token & Upload Gambar jika Izin/Sakit
         keteranganSelect.addEventListener('change', (e) => {
@@ -124,14 +125,39 @@
         form.addEventListener('submit', e => {
             e.preventDefault();
             
-            // Validasi File Gambar khusus untuk yang Hadir
-            if (keteranganSelect.value === 'Hadir' && buktiInput.files.length === 0) {
-                alert("Mohon lampirkan Bukti Screenshot Meeting!");
-                return;
+            const sesiDipilih = sesiSelect.value;
+            const tokenDimasukkan = tokenInput.value.trim().toUpperCase();
+            const keteranganDipilih = keteranganSelect.value;
+
+            // 1. VALIDASI TOKEN SECARA LOKAL
+            if (keteranganDipilih === 'Hadir') {
+                let tokenValid = false;
+                if (sesiDipilih === "Sesi 1" && tokenDimasukkan === "PERJANJIAN1") tokenValid = true;
+                else if (sesiDipilih === "Sesi 2" && tokenDimasukkan === "PERJANJIAN2") tokenValid = true;
+                else if (sesiDipilih === "Sesi 3" && tokenDimasukkan === "PERJANJIAN3") tokenValid = true;
+
+                if (!tokenValid) {
+                    notif.textContent = 'Peringatan: Token Salah! Pastikan token sesuai dengan Sesi yang dipilih.';
+                    notif.className = 'mt-5 block text-center text-sm font-bold p-4 rounded-xl bg-red-100 text-red-700 border border-red-300';
+                    setTimeout(() => { notif.className = 'hidden'; }, 5000);
+                    return; // Menghentikan proses submit
+                }
+
+                // 2. Validasi File Gambar khusus untuk yang Hadir
+                if (buktiInput.files.length === 0) {
+                     notif.textContent = 'Peringatan: Mohon lampirkan Bukti Screenshot Meeting!';
+                     notif.className = 'mt-5 block text-center text-sm font-bold p-4 rounded-xl bg-red-100 text-red-700 border border-red-300';
+                     setTimeout(() => { notif.className = 'hidden'; }, 5000);
+                     return;
+                }
             }
 
             btnSubmit.disabled = true;
             btnSubmit.textContent = 'Memproses Upload... (Mohon tunggu)';
+            
+            // Menampilkan notif loading
+            notif.textContent = 'Sedang mengirim data dan mengunggah gambar...';
+            notif.className = 'mt-5 block text-center text-sm font-semibold p-4 rounded-xl bg-blue-50 text-blue-600 border border-blue-200';
 
             // Fungsi utama mengirim ke Google Apps Script
             const kirimData = (base64String, fileName, mimeType) => {
@@ -139,9 +165,9 @@
                     nim: document.getElementById('nim').value,
                     nama: document.getElementById('nama').value,
                     kelas: document.getElementById('kelas').value,
-                    sesi: document.getElementById('sesi').value,
-                    keterangan: document.getElementById('keterangan').value,
-                    token: document.getElementById('token').value,
+                    sesi: sesiDipilih,
+                    keterangan: keteranganDipilih,
+                    token: tokenDimasukkan,
                     fileBase64: base64String,
                     fileName: fileName,
                     mimeType: mimeType
@@ -154,24 +180,24 @@
                     body: JSON.stringify(data)
                 })
                 .then(() => {
-                    notif.textContent = 'Data & Foto Terkirim! (Pastikan Token Benar)';
-                    notif.className = 'mt-5 block text-center text-sm font-semibold p-4 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200';
+                    notif.textContent = 'Data & Foto Berhasil Terkirim!';
+                    notif.className = 'mt-5 block text-center text-sm font-bold p-4 rounded-xl bg-emerald-100 text-emerald-700 border border-emerald-300';
                     form.reset();
                     wajibHadirContainer.style.display = 'block';
                 })
                 .catch(error => {
                     notif.textContent = 'Terjadi kesalahan jaringan.';
-                    notif.className = 'mt-5 block text-center text-sm font-semibold p-4 rounded-xl bg-rose-50 text-rose-600 border border-rose-200';
+                    notif.className = 'mt-5 block text-center text-sm font-bold p-4 rounded-xl bg-rose-100 text-rose-700 border border-rose-300';
                 })
                 .finally(() => {
                     btnSubmit.disabled = false;
                     btnSubmit.textContent = 'Kirim Kehadiran';
-                    setTimeout(() => { notif.className = 'hidden'; }, 5000);
+                    setTimeout(() => { notif.className = 'hidden'; }, 6000);
                 });
             };
 
             // Membaca file gambar sebagai Base64
-            if (buktiInput.files.length > 0) {
+            if (keteranganDipilih === 'Hadir' && buktiInput.files.length > 0) {
                 const file = buktiInput.files[0];
                 const reader = new FileReader();
                 reader.onload = function(event) {
