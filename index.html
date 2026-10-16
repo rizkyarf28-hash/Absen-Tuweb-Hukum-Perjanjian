@@ -123,7 +123,7 @@
         });
 
         form.addEventListener('submit', e => {
-            e.preventDefault(); // Wajib agar halaman tidak reload
+            e.preventDefault(); 
             
             const sesiDipilih = sesiSelect.value;
             const tokenDimasukkan = tokenInput.value.trim().toUpperCase();
@@ -132,20 +132,18 @@
             // 1. VALIDASI TOKEN SECARA LOKAL
             if (keteranganDipilih === 'Hadir') {
                 let tokenValid = false;
-                if (sesiDipilih === "Sesi 1" && tokenDimasukkan === "PERJANJIAN1") tokenValid = true;
-                else if (sesiDipilih === "Sesi 2" && tokenDimasukkan === "PERJANJIAN2") tokenValid = true;
-                else if (sesiDipilih === "Sesi 3" && tokenDimasukkan === "PERJANJIAN3") tokenValid = true;
+                // TOKEN BARU YANG SULIT DITEBAK
+                if (sesiDipilih === "Sesi 1" && tokenDimasukkan === "HKPX-782A") tokenValid = true;
+                else if (sesiDipilih === "Sesi 2" && tokenDimasukkan === "HKPX-419B") tokenValid = true;
+                else if (sesiDipilih === "Sesi 3" && tokenDimasukkan === "HKPX-935C") tokenValid = true;
 
                 if (!tokenValid) {
-                    // MUNCULKAN POP-UP ALERT BROWSER (Pasti muncul)
                     alert("❌ AKSES DITOLAK! Token yang Anda masukkan SALAH atau TIDAK SESUAI dengan Sesi yang dipilih.");
                     
-                    // Kosongkan token agar diisi ulang dan ubah warna border jadi merah
                     tokenInput.value = '';
                     tokenInput.focus();
                     tokenInput.classList.add('border-red-500', 'bg-red-50');
                     
-                    // Tampilkan notifikasi teks di bawah tombol
                     notif.textContent = 'Peringatan: Token Salah! Silakan coba lagi.';
                     notif.className = 'mt-5 block text-center text-sm font-bold p-4 rounded-xl bg-red-100 text-red-700 border border-red-400 shadow-sm';
                     
@@ -154,24 +152,22 @@
                         tokenInput.classList.remove('border-red-500', 'bg-red-50');
                     }, 5000);
                     
-                    return; // MENGHENTIKAN PROSES! Data tidak akan terkirim
+                    return; 
                 }
 
                 // 2. Validasi File Gambar khusus untuk yang Hadir
                 if (buktiInput.files.length === 0) {
                      alert("⚠️ GAGAL! Anda wajib melampirkan Bukti Screenshot Meeting.");
-                     return; // Menghentikan proses
+                     return; 
                 }
             }
 
-            // Jika semua benar, jalankan proses loading
             btnSubmit.disabled = true;
             btnSubmit.textContent = 'Memproses Upload... (Mohon tunggu)';
             
             notif.textContent = 'Sedang mengirim data dan mengunggah gambar...';
             notif.className = 'mt-5 block text-center text-sm font-semibold p-4 rounded-xl bg-blue-50 text-blue-600 border border-blue-200';
 
-            // Fungsi mengirim ke Google Apps Script
             const kirimData = (base64String, fileName, mimeType) => {
                 const data = {
                     nim: document.getElementById('nim').value,
@@ -209,7 +205,6 @@
                 });
             };
 
-            // Proses upload gambar
             if (keteranganDipilih === 'Hadir' && buktiInput.files.length > 0) {
                 const file = buktiInput.files[0];
                 const reader = new FileReader();
