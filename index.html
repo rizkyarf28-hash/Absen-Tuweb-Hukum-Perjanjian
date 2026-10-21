@@ -6,10 +6,13 @@
     <title>Presensi Hukum Perjanjian - Ilmu Hukum</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Library SheetJS untuk Ekspor ke Excel (.xlsx) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
         
-        /* Animasi Latar Belakang */
         @keyframes blob {
             0% { transform: translate(0px, 0px) scale(1); }
             33% { transform: translate(30px, -50px) scale(1.1); }
@@ -20,7 +23,6 @@
         .animation-delay-2000 { animation-delay: 2s; }
         .animation-delay-4000 { animation-delay: 4s; }
         
-        /* Kustomisasi Select Dropdown */
         select { 
             appearance: none; 
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23475569' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); 
@@ -30,7 +32,6 @@
             padding-right: 2.5rem; 
         }
 
-        /* Glass Panel Khusus */
         .premium-glass {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(20px);
@@ -42,7 +43,6 @@
 </head>
 <body class="relative min-h-screen bg-slate-900 overflow-x-hidden flex items-center justify-center p-4 sm:p-8 py-10">
     
-    <!-- Latar Belakang Animasi Blobs -->
     <div class="fixed w-full h-full inset-0 z-0 overflow-hidden">
         <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-blob"></div>
         <div class="absolute top-[20%] right-[-10%] w-96 h-96 bg-cyan-400 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-blob animation-delay-2000"></div>
@@ -51,11 +51,8 @@
 
     <!-- Kontainer Utama -->
     <div class="relative z-10 max-w-lg w-full premium-glass rounded-[2rem] p-8 sm:p-10 my-auto">
-        
-        <!-- Garis Aksen Emas di Atas -->
         <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 h-1.5 bg-gradient-to-r from-amber-300 to-amber-500 rounded-b-full"></div>
 
-        <!-- Header Section -->
         <div class="text-center mb-10 mt-2">
             <div class="mx-auto w-16 h-16 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl flex items-center justify-center mb-5 shadow-sm border border-white transform rotate-3">
                 <div class="transform -rotate-3">
@@ -69,7 +66,6 @@
             <p class="text-xs text-slate-500 font-medium">Universitas Terbuka - Ilmu Hukum</p>
         </div>
 
-        <!-- Form Presensi -->
         <form id="formAbsen" class="space-y-5">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
@@ -105,10 +101,7 @@
                 </select>
             </div>
 
-            <!-- Kontainer Token & Bukti (Hanya muncul jika Hadir) -->
             <div id="wajibHadirContainer" class="space-y-5 p-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 border border-blue-100/60 rounded-2xl relative overflow-hidden">
-                
-                <!-- Hiasan Watermark di dalam container token -->
                 <svg class="absolute -right-4 -bottom-4 w-32 h-32 text-blue-100 opacity-50 transform rotate-12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zm0 7.5l-10-5V12l10 5 10-5V4.5l-10 5zm0 7.5l-10-5v7.5l10 5 10-5V12l-10 5z"/></svg>
                 
                 <div class="relative z-10">
@@ -136,24 +129,64 @@
             </button>
         </form>
 
-        <!-- Notifikasi -->
         <div id="notif" class="mt-5 hidden text-center text-sm font-medium p-4 rounded-xl border transition-all duration-300"></div>
         
-        <!-- Footer -->
-        <div class="mt-8 pt-6 border-t border-slate-200/60 text-center">
+        <!-- Footer dengan Trigger Modal Admin (Klik Nama) -->
+        <div class="mt-8 pt-6 border-t border-slate-200/60 text-center relative z-20">
             <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Sistem berinovasi hak cipta</p>
-            <p class="text-xs text-slate-600 font-extrabold mt-1">Muhammad Rizky Arfiansyah</p>
+            <p onclick="bukaModalAdmin()" class="text-xs text-slate-600 font-extrabold mt-1 cursor-pointer hover:text-blue-600 transition-colors tooltip relative inline-block" title="Admin Area">Muhammad Rizky Arfiansyah</p>
         </div>
     </div>
 
-    <!-- SCRIPT (Tidak diubah fungsinya sama sekali) -->
+    <!-- MODAL ADMIN (Tersembunyi) -->
+    <div id="adminModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white rounded-[2rem] p-8 w-full max-w-sm relative shadow-2xl transform scale-95 transition-transform duration-300" id="adminBox">
+            <button onclick="tutupModalAdmin()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-800 bg-slate-100 rounded-full p-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+            </button>
+            
+            <div class="text-center mb-6">
+                <div class="mx-auto w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                </div>
+                <h2 class="text-xl font-extrabold text-slate-800">Panel Admin</h2>
+                <p class="text-xs text-slate-500 font-medium">Area khusus pengelola presensi</p>
+            </div>
+
+            <!-- Area Login -->
+            <div id="adminLogin">
+                <input type="password" id="adminPin" placeholder="Masukkan PIN Rahasia..." class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl mb-4 focus:ring-2 focus:ring-slate-800 focus:border-slate-800 outline-none text-center font-bold tracking-widest text-slate-700 shadow-inner">
+                <button onclick="cekPin()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-xl transition-colors">Akses Panel</button>
+                <p id="pinError" class="text-xs font-bold text-red-500 text-center mt-3 hidden">PIN Salah!</p>
+            </div>
+
+            <!-- Area Menu Ekspor -->
+            <div id="adminMenu" class="hidden space-y-3">
+                <button onclick="downloadExcel('Sesi 1')" class="w-full bg-emerald-100 text-emerald-800 hover:bg-emerald-200 font-bold py-3 rounded-xl flex justify-center items-center gap-2 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    Ekspor Sesi 1
+                </button>
+                <button onclick="downloadExcel('Sesi 2')" class="w-full bg-emerald-100 text-emerald-800 hover:bg-emerald-200 font-bold py-3 rounded-xl flex justify-center items-center gap-2 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    Ekspor Sesi 2
+                </button>
+                <button onclick="downloadExcel('Sesi 3')" class="w-full bg-emerald-100 text-emerald-800 hover:bg-emerald-200 font-bold py-3 rounded-xl flex justify-center items-center gap-2 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                    Ekspor Sesi 3
+                </button>
+                <p id="exportStatus" class="text-[11px] font-bold text-center text-slate-500 mt-2 h-4"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT UTAMA -->
     <script>
         const scriptURL = 'https://script.google.com/macros/s/AKfycbz7ZadVKBnS2oI6NxVhwVoacI5guq6g9QxD_NY1QTNIz6Otim2pgAmQlnqzjfqHgIAl/exec'; 
         
+        // --- LOGIKA PRESENSI ---
         const form = document.getElementById('formAbsen');
         const btnSubmit = document.getElementById('btnSubmit');
         const notif = document.getElementById('notif');
-        
         const keteranganSelect = document.getElementById('keterangan');
         const wajibHadirContainer = document.getElementById('wajibHadirContainer');
         const tokenInput = document.getElementById('token');
@@ -173,7 +206,6 @@
 
         form.addEventListener('submit', e => {
             e.preventDefault(); 
-            
             const sesiDipilih = sesiSelect.value;
             const tokenDimasukkan = tokenInput.value.trim().toUpperCase();
             const keteranganDipilih = keteranganSelect.value;
@@ -186,19 +218,15 @@
 
                 if (!tokenValid) {
                     alert("❌ AKSES DITOLAK! Token yang Anda masukkan SALAH atau TIDAK SESUAI dengan Sesi yang dipilih.");
-                    
                     tokenInput.value = '';
                     tokenInput.focus();
                     tokenInput.classList.add('border-red-500', 'bg-red-50');
-                    
                     notif.textContent = 'Peringatan: Token Salah! Silakan coba lagi.';
                     notif.className = 'mt-5 block text-center text-sm font-bold p-4 rounded-xl bg-red-50 text-red-700 border border-red-200 shadow-sm';
-                    
                     setTimeout(() => { 
                         notif.className = 'hidden'; 
                         tokenInput.classList.remove('border-red-500', 'bg-red-50');
                     }, 5000);
-                    
                     return; 
                 }
 
@@ -210,7 +238,6 @@
 
             btnSubmit.disabled = true;
             btnSubmit.innerHTML = '<span class="relative z-10 flex items-center justify-center gap-2 tracking-wide"><svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Memproses...</span>';
-            
             notif.textContent = 'Sedang mengirim data dan mengunggah gambar...';
             notif.className = 'mt-5 block text-center text-sm font-semibold p-4 rounded-xl bg-blue-50 text-blue-600 border border-blue-200';
 
@@ -262,6 +289,82 @@
                 kirimData("", "", "");
             }
         });
+
+        // --- LOGIKA PANEL ADMIN & EKSPOR ---
+        const adminModal = document.getElementById('adminModal');
+        const adminBox = document.getElementById('adminBox');
+        
+        function bukaModalAdmin() {
+            adminModal.classList.remove('hidden');
+            // Sedikit delay agar transisi opasitas terlihat
+            setTimeout(() => {
+                adminModal.classList.remove('opacity-0');
+                adminBox.classList.remove('scale-95');
+                adminBox.classList.add('scale-100');
+            }, 10);
+            document.getElementById('adminPin').value = '';
+            document.getElementById('pinError').classList.add('hidden');
+        }
+
+        function tutupModalAdmin() {
+            adminModal.classList.add('opacity-0');
+            adminBox.classList.remove('scale-100');
+            adminBox.classList.add('scale-95');
+            setTimeout(() => {
+                adminModal.classList.add('hidden');
+                // Reset form saat ditutup
+                document.getElementById('adminLogin').classList.remove('hidden');
+                document.getElementById('adminMenu').classList.add('hidden');
+            }, 300);
+        }
+
+        function cekPin() {
+            const pin = document.getElementById('adminPin').value;
+            // PIN ADMIN ANDA ADALAH: 123456
+            if(pin === '123456') {
+                document.getElementById('adminLogin').classList.add('hidden');
+                document.getElementById('adminMenu').classList.remove('hidden');
+                document.getElementById('pinError').classList.add('hidden');
+            } else {
+                document.getElementById('pinError').classList.remove('hidden');
+            }
+        }
+
+        // Fungsi Ekspor menggunakan Fetch API dan SheetJS
+        async function downloadExcel(sesiTarget) {
+            const statusEl = document.getElementById('exportStatus');
+            statusEl.textContent = `Mengambil data ${sesiTarget}...`;
+            statusEl.className = "text-[11px] font-bold text-center text-blue-500 mt-2 h-4 animate-pulse";
+            
+            try {
+                // Melakukan request GET ke Apps Script dengan parameter sesi
+                const response = await fetch(`${scriptURL}?sesi=${sesiTarget}`);
+                const res = await response.json();
+                
+                if(res.status === 'success' && res.data.length > 0) {
+                    statusEl.textContent = `Membuat file Excel...`;
+                    
+                    // Proses SheetJS
+                    const worksheet = XLSX.utils.json_to_sheet(res.data);
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, "Rekap " + sesiTarget);
+                    
+                    // Simpan & Download File .xlsx
+                    const fileName = `Rekap_Kehadiran_${sesiTarget.replace(' ', '_')}.xlsx`;
+                    XLSX.writeFile(workbook, fileName);
+                    
+                    statusEl.textContent = `✅ Unduhan ${sesiTarget} selesai!`;
+                    statusEl.className = "text-[11px] font-bold text-center text-emerald-600 mt-2 h-4";
+                } else {
+                    statusEl.textContent = `⚠️ Belum ada data untuk ${sesiTarget}.`;
+                    statusEl.className = "text-[11px] font-bold text-center text-amber-500 mt-2 h-4";
+                }
+            } catch (error) {
+                console.error(error);
+                statusEl.textContent = `❌ Gagal mengambil data server.`;
+                statusEl.className = "text-[11px] font-bold text-center text-red-500 mt-2 h-4";
+            }
+        }
     </script>
 </body>
 </html>
