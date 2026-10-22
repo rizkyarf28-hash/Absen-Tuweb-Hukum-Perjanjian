@@ -4,11 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Presensi Hukum Perjanjian - Ilmu Hukum</title>
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
     <!-- Library SheetJS untuk Ekspor ke Excel (.xlsx) -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    
+    <!-- Library Vanilla-Tilt (Efek 3D) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
     
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -38,107 +45,176 @@
             -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.5);
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+            /* Transform style untuk efek 3D */
+            transform-style: preserve-3d;
         }
+
+        /* Elemen yang menonjol keluar di 3D */
+        .pop-out {
+            transform: translateZ(30px);
+        }
+
+        /* Animasi Centang Sukses */
+        .check-icon { stroke-dasharray: 100; stroke-dashoffset: 100; animation: draw 0.8s ease forwards 0.3s; }
+        @keyframes draw { to { stroke-dashoffset: 0; } }
     </style>
 </head>
 <body class="relative min-h-screen bg-slate-900 overflow-x-hidden flex items-center justify-center p-4 sm:p-8 py-10">
     
-    <div class="fixed w-full h-full inset-0 z-0 overflow-hidden">
+    <!-- 📡 BANNER OFFLINE (Tersembunyi by default) -->
+    <div id="offlineBanner" class="fixed top-0 left-0 w-full bg-red-600 text-white text-xs font-bold text-center py-2.5 z-[999] hidden transform -translate-y-full transition-transform duration-300 shadow-lg">
+        <span class="flex items-center justify-center gap-2">
+            <svg class="w-4 h-4 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"/></svg>
+            KONEKSI INTERNET TERPUTUS! Menunggu jaringan...
+        </span>
+    </div>
+
+    <!-- Background Animasi -->
+    <div class="fixed w-full h-full inset-0 z-0 overflow-hidden pointer-events-none">
         <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-blob"></div>
         <div class="absolute top-[20%] right-[-10%] w-96 h-96 bg-cyan-400 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-blob animation-delay-2000"></div>
         <div class="absolute bottom-[-20%] left-[20%] w-96 h-96 bg-indigo-600 rounded-full mix-blend-multiply filter blur-[100px] opacity-60 animate-blob animation-delay-4000"></div>
     </div>
 
-    <!-- Kontainer Utama -->
-    <div class="relative z-10 max-w-lg w-full premium-glass rounded-[2rem] p-8 sm:p-10 my-auto">
-        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 w-32 h-1.5 bg-gradient-to-r from-amber-300 to-amber-500 rounded-b-full"></div>
-
-        <div class="text-center mb-10 mt-2">
-            <div class="mx-auto w-16 h-16 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl flex items-center justify-center mb-5 shadow-sm border border-white transform rotate-3">
-                <div class="transform -rotate-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-                    </svg>
-                </div>
-            </div>
-            <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-blue-900 tracking-tight mb-1">Hukum Perjanjian</h1>
-            <p class="text-[11px] font-bold text-blue-600 uppercase tracking-[0.2em] mb-2">Portal Presensi Webinar</p>
-            <p class="text-xs text-slate-500 font-medium">Universitas Terbuka - Ilmu Hukum</p>
+    <!-- Kontainer Utama 3D -->
+    <div class="relative z-10 max-w-lg w-full premium-glass rounded-[2rem] pt-0 pb-8 sm:pb-10 my-auto overflow-hidden"
+         data-tilt data-tilt-max="3" data-tilt-speed="400" data-tilt-glare="true" data-tilt-max-glare="0.15">
+        
+        <!-- 🌟 PROGRESS BAR -->
+        <div class="w-full h-1.5 bg-slate-200/50 mb-8 overflow-hidden relative z-20">
+            <div id="progressBar" class="h-full bg-gradient-to-r from-blue-500 to-amber-400 w-0 transition-all duration-500 ease-out rounded-r-full"></div>
         </div>
 
-        <form id="formAbsen" class="space-y-5">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div class="px-8 sm:px-10 pop-out">
+            <!-- 🕒 HEADER: Sapaan Cerdas & Jam -->
+            <div class="flex justify-between items-end mb-6 border-b border-slate-200/60 pb-4">
                 <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIM</label>
-                    <input type="text" id="nim" required class="w-full px-4 py-3.5 bg-white/70 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent focus:bg-white outline-none text-slate-800 text-sm shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] transition-all">
+                    <p id="greetingMessage" class="text-[11px] font-extrabold text-blue-600 uppercase tracking-widest mb-0.5">Sapaan...</p>
+                    <p class="text-sm font-bold text-slate-700">Calon Sarjana Hukum 👋</p>
                 </div>
-                <div>
-                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Kelas</label>
-                    <input type="text" id="kelas" required class="w-full px-4 py-3.5 bg-white/70 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent focus:bg-white outline-none text-slate-800 text-sm shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] transition-all">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Lengkap</label>
-                <input type="text" id="nama" required class="w-full px-4 py-3.5 bg-white/70 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent focus:bg-white outline-none text-slate-800 text-sm shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] transition-all">
-            </div>
-
-            <div>
-                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Sesi Webinar</label>
-                <select id="sesi" class="w-full px-4 py-3.5 bg-white/70 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent focus:bg-white outline-none text-slate-800 text-sm font-semibold shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] transition-all cursor-pointer">
-                    <option value="Sesi 1">Sesi 1</option>
-                    <option value="Sesi 2">Sesi 2</option>
-                    <option value="Sesi 3">Sesi 3</option>
-                </select>
-            </div>
-            
-            <div>
-                <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Keterangan</label>
-                <select id="keterangan" class="w-full px-4 py-3.5 bg-white/70 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent focus:bg-white outline-none text-slate-800 text-sm font-semibold shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] transition-all cursor-pointer">
-                    <option value="Hadir">Hadir</option>
-                    <option value="Izin">Izin</option>
-                    <option value="Sakit">Sakit</option>
-                </select>
-            </div>
-
-            <div id="wajibHadirContainer" class="space-y-5 p-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 border border-blue-100/60 rounded-2xl relative overflow-hidden">
-                <svg class="absolute -right-4 -bottom-4 w-32 h-32 text-blue-100 opacity-50 transform rotate-12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zm0 7.5l-10-5V12l10 5 10-5V4.5l-10 5zm0 7.5l-10-5v7.5l10 5 10-5V12l-10 5z"/></svg>
-                
-                <div class="relative z-10">
-                    <label class="block text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-2">Token Kehadiran</label>
-                    <input type="text" id="token" placeholder="Misal: HKPX-782A" class="w-full px-4 py-3.5 bg-white border border-blue-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-blue-900 font-extrabold uppercase tracking-widest text-center text-sm shadow-inner transition-colors">
-                </div>
-                
-                <div class="relative z-10">
-                    <label class="block text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-2">Bukti Screenshot Meeting</label>
-                    <div class="relative bg-white border border-blue-200 rounded-xl p-1.5 shadow-sm hover:border-blue-300 transition-colors">
-                        <input type="file" id="bukti" accept="image/*" class="w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:uppercase file:tracking-wider file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:cursor-pointer cursor-pointer outline-none">
+                <div class="text-right">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Waktu Server</p>
+                    <div id="liveClock" class="bg-slate-800 text-white text-xs font-bold py-1 px-3 rounded-lg shadow-inner flex items-center gap-1.5 animate-pulse">
+                        00:00:00 WIB
                     </div>
-                    <p class="text-[10px] font-medium text-blue-600 mt-2 text-center flex items-center justify-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
-                        Maksimal ukuran 3MB (JPG/PNG)
-                    </p>
                 </div>
             </div>
 
-            <button type="submit" id="btnSubmit" class="group relative w-full mt-4 bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-700 hover:to-indigo-800 text-white font-bold py-4 rounded-xl shadow-[0_8px_20px_-6px_rgba(79,70,229,0.5)] transform hover:-translate-y-0.5 transition-all duration-200 overflow-hidden">
-                <span class="relative z-10 flex items-center justify-center gap-2 tracking-wide">
-                    KIRIM KEHADIRAN
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                </span>
-            </button>
-        </form>
+            <!-- Header Title -->
+            <div class="text-center mb-10 mt-2">
+                <div class="mx-auto w-16 h-16 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl flex items-center justify-center mb-5 shadow-sm border border-white transform rotate-3">
+                    <div class="transform -rotate-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                        </svg>
+                    </div>
+                </div>
+                <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-blue-900 tracking-tight mb-1">Hukum Perjanjian</h1>
+                <p class="text-[11px] font-bold text-blue-600 uppercase tracking-[0.2em] mb-2">Portal Presensi Webinar</p>
+                <p class="text-xs text-slate-500 font-medium">Universitas Terbuka - Ilmu Hukum</p>
+            </div>
 
-        <div id="notif" class="mt-5 hidden text-center text-sm font-medium p-4 rounded-xl border transition-all duration-300"></div>
-        
-        <!-- Footer dengan Trigger Modal Admin (Klik Nama) -->
-        <div class="mt-8 pt-6 border-t border-slate-200/60 text-center relative z-20">
-            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Sistem berinovasi hak cipta</p>
-            <p onclick="bukaModalAdmin()" class="text-xs text-slate-600 font-extrabold mt-1 cursor-pointer hover:text-blue-600 transition-colors tooltip relative inline-block" title="Admin Area">Muhammad Rizky Arfiansyah</p>
+            <form id="formAbsen" class="space-y-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">NIM</label>
+                        <input type="text" id="nim" required class="form-input w-full px-4 py-3.5 bg-white/70 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent focus:bg-white outline-none text-slate-800 text-sm shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Kelas</label>
+                        <input type="text" id="kelas" required class="form-input w-full px-4 py-3.5 bg-white/70 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent focus:bg-white outline-none text-slate-800 text-sm shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] transition-all">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Nama Lengkap</label>
+                    <input type="text" id="nama" required class="form-input w-full px-4 py-3.5 bg-white/70 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent focus:bg-white outline-none text-slate-800 text-sm shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] transition-all">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Sesi Webinar</label>
+                        <select id="sesi" class="form-input w-full px-4 py-3.5 bg-white/70 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent focus:bg-white outline-none text-slate-800 text-sm font-semibold shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] transition-all cursor-pointer">
+                            <option value="">-- Pilih --</option>
+                            <option value="Sesi 1">Sesi 1</option>
+                            <option value="Sesi 2">Sesi 2</option>
+                            <option value="Sesi 3">Sesi 3</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Keterangan</label>
+                        <select id="keterangan" class="form-input w-full px-4 py-3.5 bg-white/70 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-transparent focus:bg-white outline-none text-slate-800 text-sm font-semibold shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)] transition-all cursor-pointer">
+                            <option value="Hadir">Hadir</option>
+                            <option value="Izin">Izin</option>
+                            <option value="Sakit">Sakit</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="wajibHadirContainer" class="space-y-5 p-6 bg-gradient-to-br from-blue-50/50 to-indigo-50/50 border border-blue-100/60 rounded-2xl relative overflow-hidden">
+                    <svg class="absolute -right-4 -bottom-4 w-32 h-32 text-blue-100 opacity-50 transform rotate-12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zm0 7.5l-10-5V12l10 5 10-5V4.5l-10 5zm0 7.5l-10-5v7.5l10 5 10-5V12l-10 5z"/></svg>
+                    
+                    <div class="relative z-10">
+                        <label class="block text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-2">Token Kehadiran</label>
+                        <input type="text" id="token" placeholder="Misal: HKPX-782A" class="form-input w-full px-4 py-3.5 bg-white border border-blue-200 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none text-blue-900 font-extrabold uppercase tracking-widest text-center text-sm shadow-inner transition-colors">
+                    </div>
+                    
+                    <div class="relative z-10">
+                        <label class="block text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-2">Bukti Screenshot Meeting</label>
+                        <div class="relative bg-white border border-blue-200 rounded-xl p-1.5 shadow-sm hover:border-blue-300 transition-colors">
+                            <input type="file" id="bukti" accept="image/*" class="form-input w-full text-sm text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:uppercase file:tracking-wider file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:cursor-pointer cursor-pointer outline-none">
+                        </div>
+                        
+                        <!-- 🖼️ THUMBNAIL PREVIEW -->
+                        <div id="previewContainer" class="hidden mt-3 relative rounded-xl overflow-hidden border-2 border-dashed border-blue-300 bg-white/50 p-1 transition-all">
+                            <img id="imagePreview" src="" class="w-full h-32 object-cover rounded-lg">
+                            <button type="button" onclick="hapusPreview()" class="absolute top-2 right-2 bg-slate-900/70 hover:bg-red-500 text-white rounded-full p-1.5 backdrop-blur transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                            </button>
+                        </div>
+                        
+                        <p class="text-[10px] font-medium text-blue-600 mt-2 text-center flex items-center justify-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" /></svg>
+                            Maksimal ukuran 3MB (JPG/PNG)
+                        </p>
+                    </div>
+                </div>
+
+                <button type="submit" id="btnSubmit" class="group relative w-full mt-4 bg-slate-200 text-slate-400 font-bold py-4 rounded-xl transition-all duration-300 pointer-events-none overflow-hidden">
+                    <span class="relative z-10 flex items-center justify-center gap-2 tracking-wide">
+                        LENGKAPI DATA DAHULU
+                    </span>
+                </button>
+            </form>
+            
+            <div id="notifError" class="mt-4 hidden text-center text-sm font-bold p-3 rounded-xl bg-red-50 text-red-600 border border-red-200"></div>
+
+            <!-- Footer dengan Trigger Modal Admin -->
+            <div class="mt-8 pt-6 border-t border-slate-200/60 text-center relative z-20">
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Sistem berinovasi hak cipta</p>
+                <p onclick="bukaModalAdmin()" class="text-xs text-slate-600 font-extrabold mt-1 cursor-pointer hover:text-blue-600 transition-colors tooltip relative inline-block" title="Admin Area">Muhammad Rizky Arfiansyah</p>
+            </div>
         </div>
     </div>
 
-    <!-- MODAL ADMIN (Tersembunyi) -->
+    <!-- 🌟 MODAL SUKSES (Pop-Up Premium) -->
+    <div id="successModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4 transition-opacity duration-300 opacity-0">
+        <div class="bg-white rounded-[2rem] p-8 w-full max-w-sm text-center transform scale-50 opacity-0 transition-all duration-500 ease-out shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)]">
+            <div class="mx-auto w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mb-6 relative">
+                <div class="absolute inset-0 bg-emerald-400 rounded-full animate-ping opacity-20"></div>
+                <svg class="h-12 w-12 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                    <path class="check-icon" stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+            </div>
+            <h2 class="text-2xl font-black text-slate-800 tracking-tight mb-2">Luar Biasa!</h2>
+            <p class="text-sm font-medium text-slate-500 mb-8">Data kehadiran dan foto Anda berhasil terekam di sistem.</p>
+            <button onclick="tutupSuccessModal()" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-emerald-500/30 transition-all transform hover:-translate-y-1">
+                Tutup Jendela
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL ADMIN -->
     <div id="adminModal" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
         <div class="bg-white rounded-[2rem] p-8 w-full max-w-sm relative shadow-2xl transform scale-95 transition-transform duration-300" id="adminBox">
             <button onclick="tutupModalAdmin()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-800 bg-slate-100 rounded-full p-2">
@@ -183,29 +259,172 @@
     <script>
         const scriptURL = 'https://script.google.com/macros/s/AKfycbz7ZadVKBnS2oI6NxVhwVoacI5guq6g9QxD_NY1QTNIz6Otim2pgAmQlnqzjfqHgIAl/exec'; 
         
-        // --- LOGIKA PRESENSI ---
-        const form = document.getElementById('formAbsen');
+        // 0. DETEKTOR INTERNET
+        const offlineBanner = document.getElementById('offlineBanner');
+        let isOnline = navigator.onLine;
+
+        window.addEventListener('offline', () => {
+            isOnline = false;
+            offlineBanner.classList.remove('hidden', '-translate-y-full');
+            updateProgress(); // Kunci tombol
+        });
+
+        window.addEventListener('online', () => {
+            isOnline = true;
+            offlineBanner.classList.add('-translate-y-full');
+            setTimeout(() => offlineBanner.classList.add('hidden'), 300);
+            updateProgress(); // Buka kunci tombol
+        });
+
+        // 1. JAM DIGITAL & SAPAAN CERDAS
+        function updateClockAndGreeting() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            
+            document.getElementById('liveClock').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg> ${hours}:${minutes}:${seconds} WIB`;
+            
+            let greeting = 'Selamat Pagi,';
+            let hr = now.getHours();
+            if(hr >= 11 && hr < 15) greeting = 'Selamat Siang,';
+            else if(hr >= 15 && hr < 18) greeting = 'Selamat Sore,';
+            else if(hr >= 18 || hr < 4) greeting = 'Selamat Malam,';
+            
+            document.getElementById('greetingMessage').textContent = greeting;
+        }
+        setInterval(updateClockAndGreeting, 1000);
+        updateClockAndGreeting();
+
+        // 2. LOGIKA PROGRESS BAR & TOMBOL
+        const allInputs = document.querySelectorAll('.form-input');
+        const progressBar = document.getElementById('progressBar');
         const btnSubmit = document.getElementById('btnSubmit');
-        const notif = document.getElementById('notif');
-        const keteranganSelect = document.getElementById('keterangan');
+
+        function updateProgress() {
+            let totalFields = 4; // NIM, Kelas, Nama, Sesi
+            let filledFields = 0;
+            
+            if(document.getElementById('nim').value.trim() !== '') filledFields++;
+            if(document.getElementById('kelas').value.trim() !== '') filledFields++;
+            if(document.getElementById('nama').value.trim() !== '') filledFields++;
+            if(document.getElementById('sesi').value !== '') filledFields++;
+
+            const ket = document.getElementById('keterangan').value;
+            if(ket === 'Hadir') {
+                totalFields += 2; // Tambah Token & Bukti
+                if(document.getElementById('token').value.trim() !== '') filledFields++;
+                if(document.getElementById('bukti').files.length > 0) filledFields++;
+            }
+
+            const percentage = (filledFields / totalFields) * 100;
+            progressBar.style.width = percentage + '%';
+
+            // Cek apakah 100% DAN sedang Online
+            if(percentage === 100 && isOnline) {
+                btnSubmit.classList.remove('bg-slate-200', 'text-slate-400', 'pointer-events-none', 'bg-red-200', 'text-red-600');
+                btnSubmit.classList.add('bg-gradient-to-r', 'from-blue-600', 'to-indigo-700', 'hover:from-blue-700', 'hover:to-indigo-800', 'text-white', 'shadow-[0_8px_20px_-6px_rgba(79,70,229,0.5)]', 'transform', 'hover:-translate-y-0.5', 'cursor-pointer');
+                btnSubmit.innerHTML = `<span class="relative z-10 flex items-center justify-center gap-2 tracking-wide">KIRIM KEHADIRAN <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg></span>`;
+            } else if (!isOnline) {
+                // Mode Offline
+                btnSubmit.classList.add('bg-red-200', 'text-red-600', 'pointer-events-none');
+                btnSubmit.classList.remove('bg-gradient-to-r', 'from-blue-600', 'to-indigo-700', 'hover:from-blue-700', 'hover:to-indigo-800', 'text-white', 'shadow-[0_8px_20px_-6px_rgba(79,70,229,0.5)]', 'transform', 'hover:-translate-y-0.5', 'bg-slate-200', 'text-slate-400');
+                btnSubmit.innerHTML = `<span class="relative z-10 flex items-center justify-center gap-2 tracking-wide">
+                    <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414"/></svg>
+                    MENUNGGU KONEKSI...
+                </span>`;
+            } else {
+                // Belum 100%
+                btnSubmit.classList.add('bg-slate-200', 'text-slate-400', 'pointer-events-none');
+                btnSubmit.classList.remove('bg-gradient-to-r', 'from-blue-600', 'to-indigo-700', 'hover:from-blue-700', 'hover:to-indigo-800', 'text-white', 'shadow-[0_8px_20px_-6px_rgba(79,70,229,0.5)]', 'transform', 'hover:-translate-y-0.5', 'bg-red-200', 'text-red-600');
+                btnSubmit.innerHTML = `<span class="relative z-10 flex items-center justify-center gap-2 tracking-wide">LENGKAPI DATA DAHULU</span>`;
+            }
+        }
+        
+        allInputs.forEach(input => {
+            input.addEventListener('input', updateProgress);
+            input.addEventListener('change', updateProgress);
+        });
+
+        // 3. THUMBNAIL PREVIEW
+        const form = document.getElementById('formAbsen');
+        const buktiInput = document.getElementById('bukti');
+        const previewContainer = document.getElementById('previewContainer');
+        const imagePreview = document.getElementById('imagePreview');
         const wajibHadirContainer = document.getElementById('wajibHadirContainer');
         const tokenInput = document.getElementById('token');
-        const buktiInput = document.getElementById('bukti');
+        const keteranganSelect = document.getElementById('keterangan');
         const sesiSelect = document.getElementById('sesi');
+
+        buktiInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    previewContainer.classList.remove('hidden');
+                }
+                reader.readAsDataURL(file);
+            } else {
+                previewContainer.classList.add('hidden');
+            }
+        });
+
+        function hapusPreview() {
+            buktiInput.value = '';
+            previewContainer.classList.add('hidden');
+            updateProgress();
+        }
 
         keteranganSelect.addEventListener('change', (e) => {
             if (e.target.value !== 'Hadir') {
                 wajibHadirContainer.style.display = 'none';
                 tokenInput.value = '-'; 
-                buktiInput.value = ''; 
+                hapusPreview();
             } else {
                 wajibHadirContainer.style.display = 'block';
                 tokenInput.value = '';
             }
+            updateProgress();
         });
+
+        // 4. SUBMIT & POP-UP SUKSES
+        const notifError = document.getElementById('notifError');
+        const successModal = document.getElementById('successModal');
+        const successContent = successModal.querySelector('div');
+
+        function showError(msg) {
+            notifError.textContent = msg;
+            notifError.classList.remove('hidden');
+            setTimeout(() => notifError.classList.add('hidden'), 5000);
+        }
+
+        function showSuccess() {
+            successModal.classList.remove('hidden');
+            setTimeout(() => {
+                successModal.classList.remove('opacity-0');
+                successContent.classList.remove('scale-50', 'opacity-0');
+                successContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+            
+            form.reset();
+            hapusPreview();
+            updateProgress();
+            wajibHadirContainer.style.display = 'block';
+        }
+
+        function tutupSuccessModal() {
+            successContent.classList.remove('scale-100', 'opacity-100');
+            successContent.classList.add('scale-50', 'opacity-0');
+            successModal.classList.add('opacity-0');
+            setTimeout(() => successModal.classList.add('hidden'), 300);
+        }
 
         form.addEventListener('submit', e => {
             e.preventDefault(); 
+            
+            if(!isOnline) return;
+
             const sesiDipilih = sesiSelect.value;
             const tokenDimasukkan = tokenInput.value.trim().toUpperCase();
             const keteranganDipilih = keteranganSelect.value;
@@ -217,64 +436,39 @@
                 else if (sesiDipilih === "Sesi 3" && tokenDimasukkan === "HKPX-935C") tokenValid = true;
 
                 if (!tokenValid) {
-                    alert("❌ AKSES DITOLAK! Token yang Anda masukkan SALAH atau TIDAK SESUAI dengan Sesi yang dipilih.");
+                    showError("❌ AKSES DITOLAK! Token yang dimasukkan SALAH untuk sesi ini.");
                     tokenInput.value = '';
                     tokenInput.focus();
-                    tokenInput.classList.add('border-red-500', 'bg-red-50');
-                    notif.textContent = 'Peringatan: Token Salah! Silakan coba lagi.';
-                    notif.className = 'mt-5 block text-center text-sm font-bold p-4 rounded-xl bg-red-50 text-red-700 border border-red-200 shadow-sm';
-                    setTimeout(() => { 
-                        notif.className = 'hidden'; 
-                        tokenInput.classList.remove('border-red-500', 'bg-red-50');
-                    }, 5000);
+                    updateProgress();
                     return; 
-                }
-
-                if (buktiInput.files.length === 0) {
-                     alert("⚠️ GAGAL! Anda wajib melampirkan Bukti Screenshot Meeting.");
-                     return; 
                 }
             }
 
             btnSubmit.disabled = true;
-            btnSubmit.innerHTML = '<span class="relative z-10 flex items-center justify-center gap-2 tracking-wide"><svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Memproses...</span>';
-            notif.textContent = 'Sedang mengirim data dan mengunggah gambar...';
-            notif.className = 'mt-5 block text-center text-sm font-semibold p-4 rounded-xl bg-blue-50 text-blue-600 border border-blue-200';
+            btnSubmit.innerHTML = `<span class="relative z-10 flex items-center justify-center gap-2 tracking-wide"><svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> MEMPROSES DATA...</span>`;
 
             const kirimData = (base64String, fileName, mimeType) => {
-                const data = {
-                    nim: document.getElementById('nim').value,
-                    nama: document.getElementById('nama').value,
-                    kelas: document.getElementById('kelas').value,
-                    sesi: sesiDipilih,
-                    keterangan: keteranganDipilih,
-                    token: tokenDimasukkan,
-                    fileBase64: base64String,
-                    fileName: fileName,
-                    mimeType: mimeType
-                };
-
                 fetch(scriptURL, {
                     method: 'POST',
                     mode: 'no-cors', 
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify({
+                        nim: document.getElementById('nim').value,
+                        nama: document.getElementById('nama').value,
+                        kelas: document.getElementById('kelas').value,
+                        sesi: sesiDipilih,
+                        keterangan: keteranganDipilih,
+                        token: tokenDimasukkan,
+                        fileBase64: base64String,
+                        fileName: fileName,
+                        mimeType: mimeType
+                    })
                 })
-                .then(() => {
-                    notif.textContent = '✅ Data & Foto Berhasil Terkirim!';
-                    notif.className = 'mt-5 block text-center text-sm font-bold p-4 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm';
-                    form.reset();
-                    wajibHadirContainer.style.display = 'block';
-                })
-                .catch(error => {
-                    alert("Terjadi kesalahan jaringan, silakan coba lagi.");
-                    notif.textContent = 'Terjadi kesalahan jaringan.';
-                    notif.className = 'mt-5 block text-center text-sm font-bold p-4 rounded-xl bg-rose-50 text-rose-700 border border-rose-200';
-                })
+                .then(() => showSuccess())
+                .catch(error => showError("Terjadi kesalahan jaringan, silakan coba lagi."))
                 .finally(() => {
                     btnSubmit.disabled = false;
-                    btnSubmit.innerHTML = '<span class="relative z-10 flex items-center justify-center gap-2 tracking-wide">KIRIM KEHADIRAN <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg></span>';
-                    setTimeout(() => { notif.className = 'hidden'; }, 6000);
+                    updateProgress(); 
                 });
             };
 
@@ -290,13 +484,12 @@
             }
         });
 
-        // --- LOGIKA PANEL ADMIN & EKSPOR ---
+        // 5. PANEL ADMIN & EKSPOR
         const adminModal = document.getElementById('adminModal');
         const adminBox = document.getElementById('adminBox');
         
         function bukaModalAdmin() {
             adminModal.classList.remove('hidden');
-            // Sedikit delay agar transisi opasitas terlihat
             setTimeout(() => {
                 adminModal.classList.remove('opacity-0');
                 adminBox.classList.remove('scale-95');
@@ -312,7 +505,6 @@
             adminBox.classList.add('scale-95');
             setTimeout(() => {
                 adminModal.classList.add('hidden');
-                // Reset form saat ditutup
                 document.getElementById('adminLogin').classList.remove('hidden');
                 document.getElementById('adminMenu').classList.add('hidden');
             }, 300);
@@ -320,7 +512,6 @@
 
         function cekPin() {
             const pin = document.getElementById('adminPin').value;
-            // PIN ADMIN ANDA ADALAH: 123456
             if(pin === '123456') {
                 document.getElementById('adminLogin').classList.add('hidden');
                 document.getElementById('adminMenu').classList.remove('hidden');
@@ -330,26 +521,21 @@
             }
         }
 
-        // Fungsi Ekspor menggunakan Fetch API dan SheetJS
         async function downloadExcel(sesiTarget) {
             const statusEl = document.getElementById('exportStatus');
             statusEl.textContent = `Mengambil data ${sesiTarget}...`;
             statusEl.className = "text-[11px] font-bold text-center text-blue-500 mt-2 h-4 animate-pulse";
             
             try {
-                // Melakukan request GET ke Apps Script dengan parameter sesi
                 const response = await fetch(`${scriptURL}?sesi=${sesiTarget}`);
                 const res = await response.json();
                 
                 if(res.status === 'success' && res.data.length > 0) {
                     statusEl.textContent = `Membuat file Excel...`;
-                    
-                    // Proses SheetJS
                     const worksheet = XLSX.utils.json_to_sheet(res.data);
                     const workbook = XLSX.utils.book_new();
                     XLSX.utils.book_append_sheet(workbook, worksheet, "Rekap " + sesiTarget);
                     
-                    // Simpan & Download File .xlsx
                     const fileName = `Rekap_Kehadiran_${sesiTarget.replace(' ', '_')}.xlsx`;
                     XLSX.writeFile(workbook, fileName);
                     
@@ -360,7 +546,6 @@
                     statusEl.className = "text-[11px] font-bold text-center text-amber-500 mt-2 h-4";
                 }
             } catch (error) {
-                console.error(error);
                 statusEl.textContent = `❌ Gagal mengambil data server.`;
                 statusEl.className = "text-[11px] font-bold text-center text-red-500 mt-2 h-4";
             }
